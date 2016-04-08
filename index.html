@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <script src="https://code.jquery.com/jquery-2.1.4.js"></script>
+  <script src="jszip.js"></script>
+  <script src='jszip-utils.js'></script>
+  <script src='FileSaver.js'></script>
+  <title>ZIP</title>
+</head>
+<body>
+  <button id='download_zip'>Zip</button>
+  <script type="text/javascript">
+
+    $(document).ready(function(){
+      $('#download_zip').on('click', download_zip);
+    });
+
+    function deferredAddZip(url, filename, zip) {
+        var deferred = $.Deferred();
+        JSZipUtils.getBinaryContent(url, function (err, data) {
+            if(err) {
+                deferred.reject(err);
+            } else {
+                zip.file(filename, data, {binary:true});
+                deferred.resolve(data);
+            }
+        });
+        return deferred;
+    }
+
+    function download_zip() {
+
+      // INPUT DATA
+      var project_name = "some_project_name";
+
+      var file_lists = [
+        'https://bropro-staging.s3.amazonaws.com/uploads/music/file/5707a4818523c3468ce7de9d/Screenshot_from_2016-04-05_14_15_25.png',
+        'https://bropro-staging.s3.amazonaws.com/uploads/video/file/570668758523c3e422e9a4c9/2131.mov',
+        'https://bropro-staging.s3.amazonaws.com/uploads/music/file/56fa7a928523c38fa613d3a6/DJ_BAUR_-_Deep_N_Love_Mix_-_Track_01.mp3'
+      ];
+
+
+      var zip = new JSZip();
+      var deferreds = [];
+
+     for(var i in file_lists) {
+        url = file_lists[i];
+        filename = url.substring(url.lastIndexOf('/')+1);
+        deferreds.push(deferredAddZip(url, filename, zip));
+      }
+
+     // when everything has been downloaded, we can trigger the dl
+      $.when.apply($, deferreds).done(function () {
+          var blob = zip.generate({type:"blob"});
+          saveAs(blob, project_name+".zip");
+          console.log("done !");
+      }).fail(function (err) {
+          console.log(err);
+      });
+
+  </script>
+</body>
+</html>
